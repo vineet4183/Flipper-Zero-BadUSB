@@ -23,7 +23,7 @@
 
 $fullName = Get-fullName
 
-$filename = "$env:TEMP/$(fullName)-$(get-date -f yyyy-MM-dd).txt"
+$filename = "$env:TEMP/$(fullName)-$(get-date -f dd-MM-yy:hh:mm:ss:tt).txt"
 
 ############################################################################################################################################################
 
